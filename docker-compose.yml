@@ -7,11 +7,12 @@ services:
       - .env
     environment:
       MONGO_URI: mongodb://mongo:27017/notepad
+      PORT: "${PORT:-4040}"
     depends_on:
       mongo:
         condition: service_healthy
     ports:
-      - "${PORT}:${PORT}"
+      - "${PORT:-4040}:${PORT:-4040}"
 
   mongo:
     image: mongo:8

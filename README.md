@@ -26,7 +26,7 @@ For a local MongoDB installation, the example configuration uses:
 
 ## Docker Compose
 
-Copy `.env.example` to `.env`, then run:
+Copy `.env.docker.example` to `.env`, then run:
 
 ```bash
 docker compose up --build

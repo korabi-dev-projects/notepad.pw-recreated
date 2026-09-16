@@ -39,6 +39,10 @@ export const bannedPatterns: RegExp[] = [
   // since legitimate note IDs shouldn't need them
   /^\./,
   /\//,
+
+  // ban any special characters at all
+  // (this is a bit more restrictive than the original implementation, but it's safer and simpler to enforce a strict alphanumeric policy)
+  /[^a-z0-9]/i,
 ];
 
 export function isBannedSlug(slug: string): boolean {

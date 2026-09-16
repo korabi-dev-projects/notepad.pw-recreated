@@ -1,0 +1,1319 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#f3efe7" />
+    <title></title>
+
+    <style>
+      :root {
+        color-scheme: dark;
+        --paper: #1d1b1a;
+        --paper-deep: #2a2724;
+        --ink: #f2ede4;
+        --muted: #a69e93;
+        --line: rgba(242, 237, 228, 0.16);
+        --accent: #c55438;
+        --accent-dark: #e17858;
+        --green: #8fbd9e;
+        --grain: rgba(255, 255, 255, 0.035);
+        --serif: Georgia, "Times New Roman", serif;
+        --sans: "Trebuchet MS", "Segoe UI", sans-serif;
+      }
+
+      body.light-theme {
+        color-scheme: light;
+        --paper: #f3efe7;
+        --paper-deep: #e9e2d6;
+        --ink: #252421;
+        --muted: #858078;
+        --line: rgba(37, 36, 33, 0.13);
+        --accent-dark: #9e3e2a;
+        --green: #4f806a;
+        --grain: rgba(37, 36, 33, 0.055);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+        margin: 0;
+      }
+
+      body {
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--sans);
+        overflow-x: hidden;
+      }
+
+      body::before {
+        background-image: radial-gradient(
+          var(--grain) 0.65px,
+          transparent 0.65px
+        );
+        background-size: 7px 7px;
+        content: "";
+        inset: 0;
+        opacity: 0.22;
+        pointer-events: none;
+        position: fixed;
+      }
+
+      button,
+      input,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .app {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        position: relative;
+      }
+
+      header {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        padding: 28px clamp(20px, 6vw, 96px) 18px;
+      }
+
+      .brand,
+      .toolbar,
+      .save-state {
+        align-items: center;
+        display: flex;
+      }
+
+      .brand {
+        gap: 12px;
+      }
+
+      .toolbar {
+        gap: 8px;
+      }
+
+      .mark {
+        align-items: center;
+        background: var(--accent);
+        color: #fffaf0;
+        display: flex;
+        font-family: var(--serif);
+        font-size: 19px;
+        height: 34px;
+        justify-content: center;
+        transform: rotate(-4deg);
+        width: 34px;
+      }
+
+      .brand-name {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+      }
+
+      .brand-sub {
+        color: var(--muted);
+        font-size: 12px;
+        margin-left: 9px;
+      }
+
+      .icon-button,
+      .pill-button {
+        align-items: center;
+        background: transparent;
+        border: 1px solid var(--line);
+        color: var(--ink);
+        display: inline-flex;
+        gap: 8px;
+        justify-content: center;
+        transition:
+          background 0.18s,
+          border-color 0.18s;
+      }
+
+      .icon-button {
+        border-radius: 50%;
+        height: 38px;
+        width: 38px;
+      }
+
+      .pill-button {
+        border-radius: 99px;
+        font-size: 12px;
+        padding: 10px 15px;
+      }
+
+      .icon-button:hover,
+      .pill-button:hover {
+        background: var(--paper-deep);
+        border-color: rgba(37, 36, 33, 0.3);
+      }
+
+      .icon-button svg,
+      .pill-button svg {
+        height: 16px;
+        width: 16px;
+      }
+
+      main {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        margin: 0 auto;
+        max-width: 1030px;
+        padding: 5vh clamp(20px, 7vw, 112px) 8vh;
+        width: 100%;
+      }
+
+      .note-meta {
+        align-items: flex-end;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 28px;
+      }
+
+      .eyebrow {
+        color: var(--accent-dark);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        margin: 0 0 11px;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        font-family: var(--serif);
+        font-size: clamp(24px, 4vw, 36px);
+        font-weight: 400;
+        line-height: 1;
+        margin: 0;
+      }
+
+      .note-id {
+        color: var(--ink);
+        font-family: var(--serif);
+        font-size: clamp(32px, 5vw, 52px);
+        line-height: 1;
+        margin: 0;
+      }
+
+      .editor-toolbar {
+        align-items: center;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        justify-content: flex-end;
+        padding: 0 0 10px;
+      }
+
+      .language-label {
+        color: var(--muted);
+        font-size: 11px;
+      }
+
+      .language-select {
+        background-color: var(--paper-deep);
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        color: var(--ink);
+        color-scheme: dark;
+        font-size: 11px;
+        margin-left: 8px;
+        padding: 5px 8px;
+      }
+
+      .language-select option {
+        background: var(--paper-deep);
+        color: var(--ink);
+      }
+
+      body.light-theme .language-select {
+        color-scheme: light;
+      }
+
+      .detected-language {
+        color: var(--muted);
+        font-size: 11px;
+        margin-left: 10px;
+        min-width: 105px;
+      }
+
+      .editor-shell {
+        height: min(62vh, 680px);
+        position: relative;
+      }
+
+      #editor {
+        height: 100%;
+        width: 100%;
+      }
+
+      .preview-pane {
+        height: 100%;
+        overflow: auto;
+        padding: 29px 0 36px;
+      }
+
+      .preview-pane h1,
+      .preview-pane h2,
+      .preview-pane h3 {
+        font-family: var(--serif);
+        font-weight: 400;
+        line-height: 1.2;
+      }
+
+      .preview-pane h1 {
+        font-size: 32px;
+      }
+
+      .preview-pane h2 {
+        font-size: 26px;
+      }
+
+      .preview-pane h3 {
+        font-size: 22px;
+      }
+
+      .preview-pane a {
+        color: var(--accent-dark);
+      }
+
+      .preview-pane code {
+        background: var(--paper-deep);
+        border-radius: 3px;
+        padding: 2px 5px;
+      }
+
+      .preview-pane pre {
+        background: var(--paper-deep);
+        overflow-x: auto;
+        padding: 14px;
+      }
+
+      .preview-pane pre code {
+        background: transparent;
+        padding: 0;
+      }
+
+      .preview-pane blockquote {
+        border-left: 3px solid var(--accent);
+        color: var(--muted);
+        margin-left: 0;
+        padding-left: 16px;
+      }
+
+      .editor-footer {
+        align-items: center;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        display: flex;
+        font-size: 11px;
+        justify-content: space-between;
+        padding-top: 14px;
+      }
+
+      .save-state {
+        gap: 7px;
+      }
+
+      .status-dot {
+        background: var(--muted);
+        border-radius: 50%;
+        height: 7px;
+        width: 7px;
+      }
+
+      .status-dot.saved {
+        background: var(--green);
+      }
+
+      .status-dot.saving {
+        animation: pulse 1s infinite;
+        background: var(--accent);
+      }
+
+      .status-dot.offline {
+        background: #b58a42;
+      }
+
+      .count {
+        font-variant-numeric: tabular-nums;
+      }
+
+      .tip {
+        color: var(--muted);
+        font-size: 11px;
+        margin-top: 34px;
+        text-align: center;
+      }
+
+      .tip kbd {
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        padding: 2px 5px;
+      }
+
+      .modal-backdrop {
+        align-items: center;
+        background: rgba(37, 36, 33, 0.24);
+        display: flex;
+        inset: 0;
+        justify-content: center;
+        padding: 20px;
+        position: fixed;
+        z-index: 5;
+      }
+
+      .modal {
+        background: var(--paper);
+        box-shadow: 0 18px 70px rgba(37, 36, 33, 0.2);
+        max-width: 410px;
+        padding: 30px;
+        width: 100%;
+      }
+
+      .modal h2 {
+        font-family: var(--serif);
+        font-size: 30px;
+        font-weight: 400;
+        margin: 0 0 8px;
+      }
+
+      .modal p {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+        margin: 0 0 22px;
+      }
+
+      .modal label {
+        color: var(--muted);
+        display: block;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        margin-bottom: 7px;
+        text-transform: uppercase;
+      }
+
+      .modal input {
+        background: rgba(255, 255, 255, 0.3);
+        border: 1px solid var(--line);
+        border-radius: 2px;
+        color: var(--ink);
+        outline: 0;
+        padding: 12px;
+        width: 100%;
+      }
+
+      .modal input:focus {
+        border-color: var(--accent);
+      }
+
+      .modal-actions {
+        display: flex;
+        gap: 9px;
+        justify-content: flex-end;
+        margin-top: 22px;
+      }
+
+        .remove-password {
+          margin-right: auto;
+        }
+
+      .primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      .primary:hover {
+        background: var(--accent-dark);
+        border-color: var(--accent-dark);
+      }
+
+      .error {
+        color: var(--accent-dark);
+        font-size: 12px;
+        margin-top: 10px;
+      }
+
+      [hidden] {
+        display: none !important;
+      }
+
+      @keyframes pulse {
+        50% {
+          opacity: 0.35;
+        }
+      }
+
+      @media (max-width: 600px) {
+        header {
+          padding-top: 20px;
+        }
+
+        .brand-sub {
+          display: none;
+        }
+
+        .toolbar .pill-button span {
+          display: none;
+        }
+
+        .toolbar .pill-button {
+          padding: 10px;
+        }
+
+        main {
+          padding-top: 6vh;
+        }
+
+        .note-meta {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .note-meta .pill-button {
+          align-self: flex-end;
+          margin-top: -50px;
+        }
+
+        textarea {
+          min-height: 58vh;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="app">
+      <header>
+        <div class="brand">
+          <div class="mark">l</div>
+
+          <div>
+            <span class="brand-name">LibrePad</span>
+            <span class="brand-sub">a quiet place to write</span>
+          </div>
+        </div>
+
+        <nav class="toolbar" aria-label="Note actions">
+          <button
+            class="pill-button"
+            id="copyButton"
+            type="button"
+            title="Copy note link"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <rect x="9" y="9" width="10" height="10" rx="1.5" />
+              <path
+                d="M15 9V6.5A1.5 1.5 0 0 0 13.5 5h-7A1.5 1.5 0 0 0 5 6.5v7A1.5 1.5 0 0 0 6.5 15H9"
+              />
+            </svg>
+            <span>Copy link</span>
+          </button>
+
+          <button
+            class="pill-button"
+            id="copyContentButton"
+            type="button"
+            title="Copy note content"
+          >
+            <span>Copy text</span>
+          </button>
+
+          <button
+            class="icon-button"
+            id="lockButton"
+            type="button"
+            title="Set note password"
+            aria-label="Set note password"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <rect x="5" y="10" width="14" height="10" rx="1.5" />
+              <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" />
+            </svg>
+          </button>
+
+          <button
+            class="pill-button"
+            id="logoutButton"
+            type="button"
+            title="Log out of this note"
+            hidden
+          >
+            Log out
+          </button>
+
+          <button
+            class="pill-button"
+            id="themeToggle"
+            type="button"
+            title="Switch to light mode"
+          >
+            Light mode
+          </button>
+        </nav>
+      </header>
+
+      <main>
+        <div class="note-meta">
+          <div>
+            <h1 class="note-id" id="noteId"></h1>
+          </div>
+
+          <button class="pill-button" id="newButton" type="button">
+            New note <span aria-hidden="true">&#8599;</span>
+          </button>
+        </div>
+
+        <section>
+          <div class="editor-toolbar">
+            <label class="language-label" for="languageSelect">Syntax</label>
+            <select class="language-select" id="languageSelect">
+              <option value="auto" selected>Auto detect</option>
+              <option value="text">Text</option>
+              <option value="markdown">Markdown</option>
+              <option value="javascript">JavaScript</option>
+              <option value="typescript">TypeScript</option>
+              <option value="json">JSON</option>
+              <option value="html">HTML</option>
+              <option value="css">CSS</option>
+              <option value="python">Python</option>
+              <option value="sql">SQL</option>
+              <option value="bash">Bash</option>
+            </select>
+            <span class="detected-language" id="detectedLanguage" aria-live="polite"></span>
+            <button class="pill-button" id="previewButton" type="button">
+              Preview
+            </button>
+          </div>
+
+          <div class="editor-shell">
+            <div id="editor" aria-label="Note editor"></div>
+            <article class="preview-pane" id="previewPane" hidden></article>
+          </div>
+
+          <div class="editor-footer">
+            <div class="save-state">
+              <span class="status-dot" id="statusDot"></span>
+              <span id="statusText">Connecting...</span>
+            </div>
+
+            <span class="count" id="count">0 characters</span>
+          </div>
+        </section>
+
+        <div class="tip">
+          Your note saves automatically
+          <span aria-hidden="true">&middot;</span>
+          <kbd>Ctrl</kbd>
+          <span aria-hidden="true">+</span>
+          <kbd>Enter</kbd>
+          to save now
+        </div>
+      </main>
+    </div>
+
+    <div class="modal-backdrop" id="passwordModal" hidden>
+      <form class="modal" id="passwordForm">
+        <h2 id="modalTitle">This note is private</h2>
+
+        <p id="modalDescription">Enter the password to open this note.</p>
+
+        <label for="passwordInput" id="passwordLabel">Password</label>
+
+        <input
+          id="passwordInput"
+          type="password"
+          autocomplete="current-password"
+          required
+          minlength="8"
+          maxlength="64"
+          pattern="(?=.*[a-z])(?=.*[A-Z])[a-zA-Z0-9]+"
+        />
+
+        <div class="error" id="modalError" role="alert" hidden></div>
+
+        <div class="modal-actions">
+          <button class="pill-button" id="cancelModal" type="button">
+            Cancel
+          </button>
+
+          <button
+            class="pill-button remove-password"
+            id="removePasswordButton"
+            type="button"
+            hidden
+          >
+            Remove password
+          </button>
+
+          <button class="pill-button primary" id="modalSubmit" type="submit">
+            Open note
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
+    <script>
+      require.config({
+        paths: {
+          vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs",
+        },
+      });
+
+      require(["vs/editor/editor.main"], () => {
+        (() => {
+        const noteId = decodeURIComponent(
+          location.pathname.split("/").filter(Boolean)[0] || "",
+        );
+
+        const editorContainer = document.getElementById("editor");
+        const languageSelect = document.getElementById("languageSelect");
+        const detectedLanguage = document.getElementById("detectedLanguage");
+        const previewButton = document.getElementById("previewButton");
+        const previewPane = document.getElementById("previewPane");
+        const themeToggle = document.getElementById("themeToggle");
+        const noteIdLabel = document.getElementById("noteId");
+        const statusText = document.getElementById("statusText");
+        const statusDot = document.getElementById("statusDot");
+        const count = document.getElementById("count");
+
+        const passwordModal = document.getElementById("passwordModal");
+        const passwordForm = document.getElementById("passwordForm");
+        const passwordInput = document.getElementById("passwordInput");
+        const passwordLabel = document.getElementById("passwordLabel");
+        const modalTitle = document.getElementById("modalTitle");
+        const modalDescription = document.getElementById("modalDescription");
+        const modalSubmit = document.getElementById("modalSubmit");
+        const removePasswordButton = document.getElementById("removePasswordButton");
+        const modalError = document.getElementById("modalError");
+        const logoutButton = document.getElementById("logoutButton");
+
+        const passwordStorageKey = `notepad.password:${noteId}`;
+        let password = localStorage.getItem(passwordStorageKey);
+        let socket = null;
+        let saveTimer = null;
+        let reconnectTimer = null;
+        let isRemoteUpdate = false;
+        let modalMode = "unlock";
+        let pendingPassword;
+        let previewVisible = false;
+        let lastDetectedLanguage;
+        let lightTheme = localStorage.getItem("librepad.theme") === "light";
+
+        document.body.classList.toggle("light-theme", lightTheme);
+        monaco.editor.defineTheme("librepad-dark", {
+          base: "vs-dark",
+          inherit: true,
+          rules: [],
+          colors: {
+            "editor.background": "#1d1b1a",
+            "editor.foreground": "#f2ede4",
+            "editorLineNumber.foreground": "#716b63",
+            "editorLineNumber.activeForeground": "#f2ede4",
+            "editorCursor.foreground": "#c55438",
+            "editor.selectionBackground": "#5f3028",
+          },
+        });
+        monaco.editor.defineTheme("librepad-light", {
+          base: "vs",
+          inherit: true,
+          rules: [],
+          colors: {
+            "editor.background": "#f3efe7",
+            "editor.foreground": "#252421",
+            "editorLineNumber.foreground": "#aaa39a",
+            "editorLineNumber.activeForeground": "#252421",
+            "editorCursor.foreground": "#c55438",
+            "editor.selectionBackground": "#e7b9aa",
+          },
+        });
+
+        const editor = monaco.editor.create(editorContainer, {
+          automaticLayout: true,
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontSize: 20,
+          minimap: { enabled: false },
+          padding: { top: 29, bottom: 36 },
+          theme: lightTheme ? "librepad-light" : "librepad-dark",
+          value: "",
+          wordWrap: "on",
+        });
+
+        const applyTheme = (useLightTheme) => {
+          lightTheme = useLightTheme;
+          document.body.classList.toggle("light-theme", lightTheme);
+          monaco.editor.setTheme(
+            lightTheme ? "librepad-light" : "librepad-dark",
+          );
+          themeToggle.textContent = lightTheme ? "Dark mode" : "Light mode";
+          themeToggle.title = lightTheme
+            ? "Switch to dark mode"
+            : "Switch to light mode";
+          document.querySelector('meta[name="theme-color"]').content = lightTheme
+            ? "#f3efe7"
+            : "#1d1b1a";
+          localStorage.setItem("librepad.theme", lightTheme ? "light" : "dark");
+        };
+
+        applyTheme(lightTheme);
+
+        const editorModes = {
+          text: "plaintext",
+          markdown: "markdown",
+          javascript: "javascript",
+          typescript: "typescript",
+          json: "json",
+          html: "html",
+          css: "css",
+          python: "python",
+          sql: "sql",
+          bash: "shell",
+        };
+
+        const languageLabels = {
+          text: "Plain text",
+          markdown: "Markdown",
+          javascript: "JavaScript",
+          typescript: "TypeScript",
+          json: "JSON",
+          html: "HTML",
+          css: "CSS",
+          python: "Python",
+          sql: "SQL",
+          bash: "Bash",
+        };
+
+        const detectLanguage = (source) => {
+          if (/^\s*(#|[-*] )/.test(source) || /```/.test(source)) {
+            return "markdown";
+          }
+          if (/^\s*[<{]/.test(source) && /<\/?[a-z][^>]*>/i.test(source)) {
+            return "html";
+          }
+          if (/^\s*[\[{]/.test(source)) {
+            try {
+              JSON.parse(source);
+              return "json";
+            } catch {}
+          }
+          if (/\b(def|import|from)\b/.test(source)) return "python";
+          if (/\b(const|let|function|console\.)\b/.test(source)) {
+            return "javascript";
+          }
+          return "text";
+        };
+
+        const updateEditorMode = () => {
+          const selectedLanguage = languageSelect.value;
+          const language =
+            selectedLanguage === "auto"
+              ? detectLanguage(editor.getValue())
+              : selectedLanguage;
+          monaco.editor.setModelLanguage(
+            editor.getModel(),
+            editorModes[language] || "plaintext",
+          );
+          detectedLanguage.textContent =
+            selectedLanguage === "auto"
+              ? `Detected: ${languageLabels[language]}`
+              : `Mode: ${languageLabels[language]}`;
+
+          if (
+            selectedLanguage === "auto" &&
+            language === "markdown" &&
+            lastDetectedLanguage !== "markdown" &&
+            !previewVisible
+          ) {
+            setPreviewMode(true);
+          }
+          lastDetectedLanguage = selectedLanguage === "auto" ? language : undefined;
+        };
+
+        const updatePreview = () => {
+          if (!previewVisible) return;
+
+          const source = editor.getValue();
+          if (window.marked && window.DOMPurify) {
+            previewPane.innerHTML = window.DOMPurify.sanitize(
+              window.marked.parse(source),
+            );
+          } else {
+            previewPane.textContent = source;
+          }
+        };
+
+        const setPreviewMode = (visible) => {
+          previewVisible = visible;
+          editorContainer.hidden = visible;
+          previewPane.hidden = !visible;
+          previewButton.textContent = visible ? "Edit" : "Preview";
+          if (visible) {
+            updatePreview();
+          } else {
+            editor.layout();
+            editor.focus();
+          }
+        };
+
+        updateEditorMode();
+
+        const clearSavedPassword = () => {
+          password = null;
+          localStorage.removeItem(passwordStorageKey);
+          logoutButton.hidden = true;
+        };
+
+        const savePassword = (value) => {
+          password = value;
+          localStorage.setItem(passwordStorageKey, value);
+          logoutButton.hidden = false;
+        };
+
+        noteIdLabel.textContent = noteId;
+        document.title = noteId;
+
+        const setStatus = (text, state = "") => {
+          statusText.textContent = text;
+          statusDot.className = `status-dot ${state}`;
+        };
+
+        const updateCount = () => {
+          const length = editor.getValue().length;
+
+          count.textContent = `${length.toLocaleString()} character${
+            length === 1 ? "" : "s"
+          }`;
+        };
+
+        const openModal = (mode) => {
+          modalMode = mode;
+          modalError.hidden = true;
+          passwordInput.value = "";
+
+          const unlock = mode === "unlock";
+
+          modalTitle.textContent = unlock
+            ? "This note is private"
+            : "Protect this note";
+
+          modalDescription.textContent = unlock
+            ? "Enter the password to open this note."
+            : "Add a password to keep this note private.";
+
+          passwordLabel.textContent = unlock ? "Password" : "New password";
+
+          modalSubmit.textContent = unlock ? "Open note" : "Protect note";
+          removePasswordButton.hidden = mode !== "protect" || !password;
+          passwordInput.required = mode !== "remove";
+          passwordLabel.hidden = false;
+          passwordInput.hidden = false;
+
+          document.getElementById("cancelModal").hidden = unlock;
+
+          passwordModal.hidden = false;
+          passwordInput.focus();
+        };
+
+        const rawUrl = () => `/${encodeURIComponent(noteId)}/raw`;
+
+        const loadNote = async () => {
+          try {
+            const url = password
+              ? `${rawUrl()}?password=${encodeURIComponent(password)}`
+              : rawUrl();
+
+            const response = await fetch(url);
+            const data = await response.text();
+
+            let parsed;
+
+            try {
+              parsed = JSON.parse(data);
+            } catch {
+              parsed = null;
+            }
+
+            if (!response.ok) {
+              throw new Error("Unable to load note");
+            }
+
+            if (parsed && parsed.error) {
+              if (parsed.error.toLowerCase().includes("password")) {
+                clearSavedPassword();
+                openModal("unlock");
+                return false;
+              }
+
+              throw new Error(parsed.error);
+            }
+
+            isRemoteUpdate = true;
+            editor.setValue(data, -1);
+            isRemoteUpdate = false;
+
+            updateCount();
+            updateEditorMode();
+            updatePreview();
+
+            return true;
+          } catch (error) {
+            setStatus(
+              error instanceof Error ? error.message : "Unable to load note",
+              "offline",
+            );
+
+            return false;
+          }
+        };
+
+        const connect = () => {
+          clearTimeout(reconnectTimer);
+
+          if (socket) {
+            try {
+              socket.close();
+            } catch {}
+          }
+
+          const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+
+          /*
+           * If this HTML is served by Elysia itself, this is correct:
+           *
+           *   http://localhost:4040/<note>
+           *   -> ws://localhost:4040/socket/ws2
+           *
+           * If your frontend is served by another port, change this to:
+           *
+           *   const wsUrl = "ws://localhost:4040/socket/ws";
+           */
+          const wsUrl = `${protocol}//${location.host}/socket/ws`;
+
+          console.log("[WS] Connecting to:", wsUrl);
+
+          socket = new WebSocket(wsUrl);
+
+          socket.addEventListener("open", () => {
+            console.log("[WS] Connected");
+
+            setStatus("Live", "saved");
+
+            socket.send(
+              JSON.stringify({
+                type: "subscribe",
+                noteId,
+                ...(password ? { password } : {}),
+              }),
+            );
+          });
+
+          socket.addEventListener("message", (event) => {
+            let message;
+
+            try {
+              message = JSON.parse(event.data);
+            } catch {
+              console.warn("[WS] Invalid JSON:", event.data);
+              return;
+            }
+
+            console.log("[WS] Message:", message);
+
+            if (message.type === "error") {
+              const errorMessage = message.message || "The request could not be completed.";
+
+              if (
+                message.code === "password_required" ||
+                message.code === "invalid_password" ||
+                message.code === "invalid_password_format"
+              ) {
+                if (message.code === "invalid_password_format") {
+                  clearSavedPassword();
+                }
+                openModal("unlock");
+                modalError.textContent = errorMessage;
+                modalError.hidden = false;
+              } else if (!passwordModal.hidden) {
+                modalError.textContent = errorMessage;
+                modalError.hidden = false;
+              } else {
+                setStatus(errorMessage, "offline");
+              }
+
+              return;
+            }
+
+            if (
+              message.type === "update" &&
+              message.noteId === noteId &&
+              message.content !== editor.getValue()
+            ) {
+              isRemoteUpdate = true;
+
+              editor.setValue(message.content, -1);
+
+              isRemoteUpdate = false;
+
+              updateCount();
+              updateEditorMode();
+              updatePreview();
+              setStatus("Updated live", "saved");
+            }
+
+            if (
+              (message.type === "update_password" ||
+                message.type === "password_updated") &&
+              message.noteId === noteId
+            ) {
+              if (message.type === "password_updated") {
+                if (pendingPassword === null) {
+                  clearSavedPassword();
+                } else if (typeof pendingPassword === "string") {
+                  savePassword(pendingPassword);
+                }
+                pendingPassword = undefined;
+              } else {
+                clearSavedPassword();
+              }
+              passwordModal.hidden = true;
+              setStatus(
+                message.type === "password_updated"
+                  ? "Password changed"
+                  : "Password changed elsewhere",
+                "saved",
+              );
+            }
+          });
+
+          socket.addEventListener("close", (event) => {
+            console.log("[WS] Closed:", event.code, event.reason);
+
+            setStatus("Reconnecting...", "offline");
+
+            reconnectTimer = setTimeout(connect, 1800);
+          });
+
+          socket.addEventListener("error", (error) => {
+            console.error("[WS] Error:", error);
+          });
+        };
+
+        const save = () => {
+          if (!socket || socket.readyState !== WebSocket.OPEN) {
+            setStatus("Waiting to save...", "offline");
+            return;
+          }
+
+          setStatus("Saving...", "saving");
+
+          socket.send(
+            JSON.stringify({
+              type: "update",
+              noteId,
+              content: editor.getValue(),
+              ...(password ? { password } : {}),
+            }),
+          );
+
+          window.setTimeout(() => {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+              setStatus("Saved just now", "saved");
+            }
+          }, 350);
+        };
+
+        editor.onDidChangeModelContent(() => {
+          updateCount();
+          updatePreview();
+          if (languageSelect.value === "auto") {
+            updateEditorMode();
+          }
+
+          if (!isRemoteUpdate) {
+            setStatus("Unsaved changes", "saving");
+
+            clearTimeout(saveTimer);
+
+            saveTimer = setTimeout(save, 650);
+          }
+        });
+
+        languageSelect.addEventListener("change", updateEditorMode);
+
+        previewButton.addEventListener("click", () => {
+          setPreviewMode(!previewVisible);
+        });
+
+        themeToggle.addEventListener("click", () => {
+          applyTheme(!lightTheme);
+        });
+
+        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+          clearTimeout(saveTimer);
+          save();
+        });
+
+        document
+          .getElementById("copyButton")
+          .addEventListener("click", async () => {
+            await navigator.clipboard.writeText(location.href);
+
+            const label = document.querySelector("#copyButton span");
+
+            const original = label.textContent;
+
+            label.textContent = "Copied";
+
+            setTimeout(() => {
+              label.textContent = original;
+            }, 1400);
+          });
+
+        document
+          .getElementById("copyContentButton")
+          .addEventListener("click", async () => {
+            await navigator.clipboard.writeText(editor.getValue());
+
+            const label = document.querySelector("#copyContentButton span");
+            const original = label.textContent;
+
+            label.textContent = "Copied";
+
+            setTimeout(() => {
+              label.textContent = original;
+            }, 1400);
+          });
+
+        document.getElementById("newButton").addEventListener("click", () => {
+          location.href = "/";
+        });
+
+        document.getElementById("lockButton").addEventListener("click", () => {
+          openModal("protect");
+        });
+
+        logoutButton.addEventListener("click", () => {
+          clearSavedPassword();
+          passwordModal.hidden = true;
+          if (socket) {
+            socket.close();
+          }
+          location.reload();
+        });
+
+        removePasswordButton.addEventListener("click", () => {
+          openModal("remove");
+          modalTitle.textContent = "Remove note password";
+          modalDescription.textContent =
+            "Remove password protection from this note?";
+          passwordLabel.hidden = true;
+          passwordInput.hidden = true;
+          modalSubmit.textContent = "Remove password";
+        });
+
+        document.getElementById("cancelModal").addEventListener("click", () => {
+          passwordModal.hidden = true;
+        });
+
+        passwordForm.addEventListener("submit", async (event) => {
+          event.preventDefault();
+
+          modalError.hidden = true;
+
+          const value = passwordInput.value;
+
+          if (
+            modalMode !== "remove" &&
+            !/^(?=.*[a-z])(?=.*[A-Z])[a-zA-Z0-9]{8,64}$/.test(value)
+          ) {
+            modalError.textContent =
+              "Password must be 8-64 characters with at least one uppercase and one lowercase letter.";
+            modalError.hidden = false;
+            return;
+          }
+
+          if (modalMode === "unlock") {
+            password = value;
+
+            if (await loadNote()) {
+              savePassword(value);
+              passwordModal.hidden = true;
+              connect();
+            } else {
+              password = null;
+
+              modalError.textContent = "That password did not work. Try again.";
+
+              modalError.hidden = false;
+            }
+
+            return;
+          }
+
+          if (!socket || socket.readyState !== WebSocket.OPEN) {
+            modalError.textContent =
+              "Wait for the live connection, then try again.";
+
+            modalError.hidden = false;
+
+            return;
+          }
+
+          socket.send(
+            JSON.stringify({
+              type: "update_password",
+              noteId,
+              newPassword: modalMode === "remove" ? null : value,
+              ...(password ? { password } : {}),
+            }),
+          );
+
+          pendingPassword = modalMode === "remove" ? null : value;
+
+          setStatus("Saving password...", "saving");
+        });
+
+        (async () => {
+          const loaded = await loadNote();
+
+          if (loaded) {
+            logoutButton.hidden = !password;
+            connect();
+          }
+        })();
+        })();
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,28 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/notepad
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "${PORT}:${PORT}"
+
+  mongo:
+    image: mongo:8
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok' localhost:27017/test | grep 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  mongo-data:

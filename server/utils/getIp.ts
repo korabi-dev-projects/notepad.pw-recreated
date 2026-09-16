@@ -1,3 +1,9 @@
+function devLog(...args: any[]) {
+  if (process.env.NODE_ENV === "development") {
+    console.log("[DEV getIp]", ...args);
+  }
+}
+
 export default function getIp(
   req: Request,
   server: Bun.Server<unknown>,
@@ -20,9 +26,16 @@ export default function getIp(
       if (headers[header]) count++;
     }
     if (count > 1) {
+      devLog(
+        "TRUST_PROXY is true but multiple conflicting headers for client IP address were found:",
+        headers,
+      );
       throw new Error("Multiple conflicting headers for client IP address");
     }
     if (count === 0) {
+      devLog(
+        "TRUST_PROXY is true but no headers for client IP address were found",
+      );
       return null;
     }
 
@@ -33,12 +46,17 @@ export default function getIp(
     } else if (headers["x-real-ip"]) {
       ip = headers["x-real-ip"] as string;
     }
+    devLog("TRUST_PROXY is true, using IP address from headers:", ip);
   } else {
     let requestedIp = server.requestIP(req);
     if (!requestedIp) {
+      devLog(
+        "TRUST_PROXY is false but server.requestIP returned null for client IP address",
+      );
       return null;
     }
     ip = requestedIp.address;
+    devLog("TRUST_PROXY is false, using IP address from server.requestIP:", ip);
   }
   return ip;
 }

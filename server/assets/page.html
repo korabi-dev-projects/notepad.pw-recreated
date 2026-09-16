@@ -430,9 +430,9 @@
         margin-top: 22px;
       }
 
-        .remove-password {
-          margin-right: auto;
-        }
+      .remove-password {
+        margin-right: auto;
+      }
 
       .primary {
         background: var(--accent);
@@ -608,7 +608,11 @@
               <option value="sql">SQL</option>
               <option value="bash">Bash</option>
             </select>
-            <span class="detected-language" id="detectedLanguage" aria-live="polite"></span>
+            <span
+              class="detected-language"
+              id="detectedLanguage"
+              aria-live="polite"
+            ></span>
             <button class="pill-button" id="previewButton" type="button">
               Preview
             </button>
@@ -693,625 +697,639 @@
 
       require(["vs/editor/editor.main"], () => {
         (() => {
-        const noteId = decodeURIComponent(
-          location.pathname.split("/").filter(Boolean)[0] || "",
-        );
+          const noteId = decodeURIComponent(
+            location.pathname.split("/").filter(Boolean)[0] || "",
+          );
 
-        const editorContainer = document.getElementById("editor");
-        const languageSelect = document.getElementById("languageSelect");
-        const detectedLanguage = document.getElementById("detectedLanguage");
-        const previewButton = document.getElementById("previewButton");
-        const previewPane = document.getElementById("previewPane");
-        const themeToggle = document.getElementById("themeToggle");
-        const noteIdLabel = document.getElementById("noteId");
-        const statusText = document.getElementById("statusText");
-        const statusDot = document.getElementById("statusDot");
-        const count = document.getElementById("count");
+          const editorContainer = document.getElementById("editor");
+          const languageSelect = document.getElementById("languageSelect");
+          const detectedLanguage = document.getElementById("detectedLanguage");
+          const previewButton = document.getElementById("previewButton");
+          const previewPane = document.getElementById("previewPane");
+          const themeToggle = document.getElementById("themeToggle");
+          const noteIdLabel = document.getElementById("noteId");
+          const statusText = document.getElementById("statusText");
+          const statusDot = document.getElementById("statusDot");
+          const count = document.getElementById("count");
 
-        const passwordModal = document.getElementById("passwordModal");
-        const passwordForm = document.getElementById("passwordForm");
-        const passwordInput = document.getElementById("passwordInput");
-        const passwordLabel = document.getElementById("passwordLabel");
-        const modalTitle = document.getElementById("modalTitle");
-        const modalDescription = document.getElementById("modalDescription");
-        const modalSubmit = document.getElementById("modalSubmit");
-        const removePasswordButton = document.getElementById("removePasswordButton");
-        const modalError = document.getElementById("modalError");
-        const logoutButton = document.getElementById("logoutButton");
+          const passwordModal = document.getElementById("passwordModal");
+          const passwordForm = document.getElementById("passwordForm");
+          const passwordInput = document.getElementById("passwordInput");
+          const passwordLabel = document.getElementById("passwordLabel");
+          const modalTitle = document.getElementById("modalTitle");
+          const modalDescription = document.getElementById("modalDescription");
+          const modalSubmit = document.getElementById("modalSubmit");
+          const removePasswordButton = document.getElementById(
+            "removePasswordButton",
+          );
+          const modalError = document.getElementById("modalError");
+          const logoutButton = document.getElementById("logoutButton");
 
-        const passwordStorageKey = `notepad.password:${noteId}`;
-        let password = localStorage.getItem(passwordStorageKey);
-        let socket = null;
-        let saveTimer = null;
-        let reconnectTimer = null;
-        let isRemoteUpdate = false;
-        let modalMode = "unlock";
-        let pendingPassword;
-        let previewVisible = false;
-        let lastDetectedLanguage;
-        let lightTheme = localStorage.getItem("librepad.theme") === "light";
+          const passwordStorageKey = `notepad.password:${noteId}`;
+          let password = localStorage.getItem(passwordStorageKey);
+          let socket = null;
+          let saveTimer = null;
+          let reconnectTimer = null;
+          let isRemoteUpdate = false;
+          let modalMode = "unlock";
+          let pendingPassword;
+          let previewVisible = false;
+          let lastDetectedLanguage;
+          let lightTheme = localStorage.getItem("librepad.theme") === "light";
 
-        document.body.classList.toggle("light-theme", lightTheme);
-        monaco.editor.defineTheme("librepad-dark", {
-          base: "vs-dark",
-          inherit: true,
-          rules: [],
-          colors: {
-            "editor.background": "#1d1b1a",
-            "editor.foreground": "#f2ede4",
-            "editorLineNumber.foreground": "#716b63",
-            "editorLineNumber.activeForeground": "#f2ede4",
-            "editorCursor.foreground": "#c55438",
-            "editor.selectionBackground": "#5f3028",
-          },
-        });
-        monaco.editor.defineTheme("librepad-light", {
-          base: "vs",
-          inherit: true,
-          rules: [],
-          colors: {
-            "editor.background": "#f3efe7",
-            "editor.foreground": "#252421",
-            "editorLineNumber.foreground": "#aaa39a",
-            "editorLineNumber.activeForeground": "#252421",
-            "editorCursor.foreground": "#c55438",
-            "editor.selectionBackground": "#e7b9aa",
-          },
-        });
-
-        const editor = monaco.editor.create(editorContainer, {
-          automaticLayout: true,
-          fontFamily: 'Georgia, "Times New Roman", serif',
-          fontSize: 20,
-          minimap: { enabled: false },
-          padding: { top: 29, bottom: 36 },
-          theme: lightTheme ? "librepad-light" : "librepad-dark",
-          value: "",
-          wordWrap: "on",
-        });
-
-        const applyTheme = (useLightTheme) => {
-          lightTheme = useLightTheme;
           document.body.classList.toggle("light-theme", lightTheme);
-          monaco.editor.setTheme(
-            lightTheme ? "librepad-light" : "librepad-dark",
-          );
-          themeToggle.textContent = lightTheme ? "Dark mode" : "Light mode";
-          themeToggle.title = lightTheme
-            ? "Switch to dark mode"
-            : "Switch to light mode";
-          document.querySelector('meta[name="theme-color"]').content = lightTheme
-            ? "#f3efe7"
-            : "#1d1b1a";
-          localStorage.setItem("librepad.theme", lightTheme ? "light" : "dark");
-        };
-
-        applyTheme(lightTheme);
-
-        const editorModes = {
-          text: "plaintext",
-          markdown: "markdown",
-          javascript: "javascript",
-          typescript: "typescript",
-          json: "json",
-          html: "html",
-          css: "css",
-          python: "python",
-          sql: "sql",
-          bash: "shell",
-        };
-
-        const languageLabels = {
-          text: "Plain text",
-          markdown: "Markdown",
-          javascript: "JavaScript",
-          typescript: "TypeScript",
-          json: "JSON",
-          html: "HTML",
-          css: "CSS",
-          python: "Python",
-          sql: "SQL",
-          bash: "Bash",
-        };
-
-        const detectLanguage = (source) => {
-          if (/^\s*(#|[-*] )/.test(source) || /```/.test(source)) {
-            return "markdown";
-          }
-          if (/^\s*[<{]/.test(source) && /<\/?[a-z][^>]*>/i.test(source)) {
-            return "html";
-          }
-          if (/^\s*[\[{]/.test(source)) {
-            try {
-              JSON.parse(source);
-              return "json";
-            } catch {}
-          }
-          if (/\b(def|import|from)\b/.test(source)) return "python";
-          if (/\b(const|let|function|console\.)\b/.test(source)) {
-            return "javascript";
-          }
-          return "text";
-        };
-
-        const updateEditorMode = () => {
-          const selectedLanguage = languageSelect.value;
-          const language =
-            selectedLanguage === "auto"
-              ? detectLanguage(editor.getValue())
-              : selectedLanguage;
-          monaco.editor.setModelLanguage(
-            editor.getModel(),
-            editorModes[language] || "plaintext",
-          );
-          detectedLanguage.textContent =
-            selectedLanguage === "auto"
-              ? `Detected: ${languageLabels[language]}`
-              : `Mode: ${languageLabels[language]}`;
-
-          if (
-            selectedLanguage === "auto" &&
-            language === "markdown" &&
-            lastDetectedLanguage !== "markdown" &&
-            !previewVisible
-          ) {
-            setPreviewMode(true);
-          }
-          lastDetectedLanguage = selectedLanguage === "auto" ? language : undefined;
-        };
-
-        const updatePreview = () => {
-          if (!previewVisible) return;
-
-          const source = editor.getValue();
-          if (window.marked && window.DOMPurify) {
-            previewPane.innerHTML = window.DOMPurify.sanitize(
-              window.marked.parse(source),
-            );
-          } else {
-            previewPane.textContent = source;
-          }
-        };
-
-        const setPreviewMode = (visible) => {
-          previewVisible = visible;
-          editorContainer.hidden = visible;
-          previewPane.hidden = !visible;
-          previewButton.textContent = visible ? "Edit" : "Preview";
-          if (visible) {
-            updatePreview();
-          } else {
-            editor.layout();
-            editor.focus();
-          }
-        };
-
-        updateEditorMode();
-
-        const clearSavedPassword = () => {
-          password = null;
-          localStorage.removeItem(passwordStorageKey);
-          logoutButton.hidden = true;
-        };
-
-        const savePassword = (value) => {
-          password = value;
-          localStorage.setItem(passwordStorageKey, value);
-          logoutButton.hidden = false;
-        };
-
-        noteIdLabel.textContent = noteId;
-        document.title = noteId;
-
-        const setStatus = (text, state = "") => {
-          statusText.textContent = text;
-          statusDot.className = `status-dot ${state}`;
-        };
-
-        const updateCount = () => {
-          const length = editor.getValue().length;
-
-          count.textContent = `${length.toLocaleString()} character${
-            length === 1 ? "" : "s"
-          }`;
-        };
-
-        const openModal = (mode) => {
-          modalMode = mode;
-          modalError.hidden = true;
-          passwordInput.value = "";
-
-          const unlock = mode === "unlock";
-
-          modalTitle.textContent = unlock
-            ? "This note is private"
-            : "Protect this note";
-
-          modalDescription.textContent = unlock
-            ? "Enter the password to open this note."
-            : "Add a password to keep this note private.";
-
-          passwordLabel.textContent = unlock ? "Password" : "New password";
-
-          modalSubmit.textContent = unlock ? "Open note" : "Protect note";
-          removePasswordButton.hidden = mode !== "protect" || !password;
-          passwordInput.required = mode !== "remove";
-          passwordLabel.hidden = false;
-          passwordInput.hidden = false;
-
-          document.getElementById("cancelModal").hidden = unlock;
-
-          passwordModal.hidden = false;
-          passwordInput.focus();
-        };
-
-        const rawUrl = () => `/${encodeURIComponent(noteId)}/raw`;
-
-        const loadNote = async () => {
-          try {
-            const url = password
-              ? `${rawUrl()}?password=${encodeURIComponent(password)}`
-              : rawUrl();
-
-            const response = await fetch(url);
-            const data = await response.text();
-
-            let parsed;
-
-            try {
-              parsed = JSON.parse(data);
-            } catch {
-              parsed = null;
-            }
-
-            if (!response.ok) {
-              throw new Error("Unable to load note");
-            }
-
-            if (parsed && parsed.error) {
-              if (parsed.error.toLowerCase().includes("password")) {
-                clearSavedPassword();
-                openModal("unlock");
-                return false;
-              }
-
-              throw new Error(parsed.error);
-            }
-
-            isRemoteUpdate = true;
-            editor.setValue(data, -1);
-            isRemoteUpdate = false;
-
-            updateCount();
-            updateEditorMode();
-            updatePreview();
-
-            return true;
-          } catch (error) {
-            setStatus(
-              error instanceof Error ? error.message : "Unable to load note",
-              "offline",
-            );
-
-            return false;
-          }
-        };
-
-        const connect = () => {
-          clearTimeout(reconnectTimer);
-
-          if (socket) {
-            try {
-              socket.close();
-            } catch {}
-          }
-
-          const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-
-          /*
-           * If this HTML is served by Elysia itself, this is correct:
-           *
-           *   http://localhost:4040/<note>
-           *   -> ws://localhost:4040/socket/ws2
-           *
-           * If your frontend is served by another port, change this to:
-           *
-           *   const wsUrl = "ws://localhost:4040/socket/ws";
-           */
-          const wsUrl = `${protocol}//${location.host}/socket/ws`;
-
-          console.log("[WS] Connecting to:", wsUrl);
-
-          socket = new WebSocket(wsUrl);
-
-          socket.addEventListener("open", () => {
-            console.log("[WS] Connected");
-
-            setStatus("Live", "saved");
-
-            socket.send(
-              JSON.stringify({
-                type: "subscribe",
-                noteId,
-                ...(password ? { password } : {}),
-              }),
-            );
+          monaco.editor.defineTheme("librepad-dark", {
+            base: "vs-dark",
+            inherit: true,
+            rules: [],
+            colors: {
+              "editor.background": "#1d1b1a",
+              "editor.foreground": "#f2ede4",
+              "editorLineNumber.foreground": "#716b63",
+              "editorLineNumber.activeForeground": "#f2ede4",
+              "editorCursor.foreground": "#c55438",
+              "editor.selectionBackground": "#5f3028",
+            },
+          });
+          monaco.editor.defineTheme("librepad-light", {
+            base: "vs",
+            inherit: true,
+            rules: [],
+            colors: {
+              "editor.background": "#f3efe7",
+              "editor.foreground": "#252421",
+              "editorLineNumber.foreground": "#aaa39a",
+              "editorLineNumber.activeForeground": "#252421",
+              "editorCursor.foreground": "#c55438",
+              "editor.selectionBackground": "#e7b9aa",
+            },
           });
 
-          socket.addEventListener("message", (event) => {
-            let message;
+          const editor = monaco.editor.create(editorContainer, {
+            automaticLayout: true,
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontSize: 20,
+            minimap: { enabled: false },
+            padding: { top: 29, bottom: 36 },
+            theme: lightTheme ? "librepad-light" : "librepad-dark",
+            value: "",
+            wordWrap: "on",
+          });
 
-            try {
-              message = JSON.parse(event.data);
-            } catch {
-              console.warn("[WS] Invalid JSON:", event.data);
-              return;
+          const applyTheme = (useLightTheme) => {
+            lightTheme = useLightTheme;
+            document.body.classList.toggle("light-theme", lightTheme);
+            monaco.editor.setTheme(
+              lightTheme ? "librepad-light" : "librepad-dark",
+            );
+            themeToggle.textContent = lightTheme ? "Dark mode" : "Light mode";
+            themeToggle.title = lightTheme
+              ? "Switch to dark mode"
+              : "Switch to light mode";
+            document.querySelector('meta[name="theme-color"]').content =
+              lightTheme ? "#f3efe7" : "#1d1b1a";
+            localStorage.setItem(
+              "librepad.theme",
+              lightTheme ? "light" : "dark",
+            );
+          };
+
+          applyTheme(lightTheme);
+
+          const editorModes = {
+            text: "plaintext",
+            markdown: "markdown",
+            javascript: "javascript",
+            typescript: "typescript",
+            json: "json",
+            html: "html",
+            css: "css",
+            python: "python",
+            sql: "sql",
+            bash: "shell",
+          };
+
+          const languageLabels = {
+            text: "Plain text",
+            markdown: "Markdown",
+            javascript: "JavaScript",
+            typescript: "TypeScript",
+            json: "JSON",
+            html: "HTML",
+            css: "CSS",
+            python: "Python",
+            sql: "SQL",
+            bash: "Bash",
+          };
+
+          const detectLanguage = (source) => {
+            if (/^\s*(#|[-*] )/.test(source) || /```/.test(source)) {
+              return "markdown";
             }
-
-            console.log("[WS] Message:", message);
-
-            if (message.type === "error") {
-              const errorMessage = message.message || "The request could not be completed.";
-
-              if (
-                message.code === "password_required" ||
-                message.code === "invalid_password" ||
-                message.code === "invalid_password_format"
-              ) {
-                if (message.code === "invalid_password_format") {
-                  clearSavedPassword();
-                }
-                openModal("unlock");
-                modalError.textContent = errorMessage;
-                modalError.hidden = false;
-              } else if (!passwordModal.hidden) {
-                modalError.textContent = errorMessage;
-                modalError.hidden = false;
-              } else {
-                setStatus(errorMessage, "offline");
-              }
-
-              return;
+            if (/^\s*[<{]/.test(source) && /<\/?[a-z][^>]*>/i.test(source)) {
+              return "html";
             }
+            if (/^\s*[\[{]/.test(source)) {
+              try {
+                JSON.parse(source);
+                return "json";
+              } catch {}
+            }
+            if (/\b(def|import|from)\b/.test(source)) return "python";
+            if (/\b(const|let|function|console\.)\b/.test(source)) {
+              return "javascript";
+            }
+            return "text";
+          };
+
+          const updateEditorMode = () => {
+            const selectedLanguage = languageSelect.value;
+            const language =
+              selectedLanguage === "auto"
+                ? detectLanguage(editor.getValue())
+                : selectedLanguage;
+            monaco.editor.setModelLanguage(
+              editor.getModel(),
+              editorModes[language] || "plaintext",
+            );
+            detectedLanguage.textContent =
+              selectedLanguage === "auto"
+                ? `Detected: ${languageLabels[language]}`
+                : `Mode: ${languageLabels[language]}`;
 
             if (
-              message.type === "update" &&
-              message.noteId === noteId &&
-              message.content !== editor.getValue()
+              selectedLanguage === "auto" &&
+              language === "markdown" &&
+              lastDetectedLanguage !== "markdown" &&
+              !previewVisible
             ) {
+              setPreviewMode(true);
+            }
+            lastDetectedLanguage =
+              selectedLanguage === "auto" ? language : undefined;
+          };
+
+          const updatePreview = () => {
+            if (!previewVisible) return;
+
+            const source = editor.getValue();
+            if (window.marked && window.DOMPurify) {
+              previewPane.innerHTML = window.DOMPurify.sanitize(
+                window.marked.parse(source),
+              );
+            } else {
+              previewPane.textContent = source;
+            }
+          };
+
+          const setPreviewMode = (visible) => {
+            previewVisible = visible;
+            editorContainer.hidden = visible;
+            previewPane.hidden = !visible;
+            previewButton.textContent = visible ? "Edit" : "Preview";
+            if (visible) {
+              updatePreview();
+            } else {
+              editor.layout();
+              editor.focus();
+            }
+          };
+
+          updateEditorMode();
+
+          const clearSavedPassword = () => {
+            password = null;
+            localStorage.removeItem(passwordStorageKey);
+            logoutButton.hidden = true;
+          };
+
+          const savePassword = (value) => {
+            password = value;
+            localStorage.setItem(passwordStorageKey, value);
+            logoutButton.hidden = false;
+          };
+
+          noteIdLabel.textContent = noteId;
+          document.title = noteId;
+
+          const setStatus = (text, state = "") => {
+            statusText.textContent = text;
+            statusDot.className = `status-dot ${state}`;
+          };
+
+          const updateCount = () => {
+            const length = editor.getValue().length;
+
+            count.textContent = `${length.toLocaleString()} character${
+              length === 1 ? "" : "s"
+            }`;
+          };
+
+          const openModal = (mode) => {
+            modalMode = mode;
+            modalError.hidden = true;
+            passwordInput.value = "";
+
+            const unlock = mode === "unlock";
+
+            modalTitle.textContent = unlock
+              ? "This note is private"
+              : "Protect this note";
+
+            modalDescription.textContent = unlock
+              ? "Enter the password to open this note."
+              : "Add a password to keep this note private.";
+
+            passwordLabel.textContent = unlock ? "Password" : "New password";
+
+            modalSubmit.textContent = unlock ? "Open note" : "Protect note";
+            removePasswordButton.hidden = mode !== "protect" || !password;
+            passwordInput.required = mode !== "remove";
+            passwordLabel.hidden = false;
+            passwordInput.hidden = false;
+
+            document.getElementById("cancelModal").hidden = unlock;
+
+            passwordModal.hidden = false;
+            passwordInput.focus();
+          };
+
+          const rawUrl = () => `/${encodeURIComponent(noteId)}/raw`;
+
+          const loadNote = async () => {
+            try {
+              const url = password
+                ? `${rawUrl()}?password=${encodeURIComponent(password)}`
+                : rawUrl();
+
+              const response = await fetch(url);
+              const data = await response.text();
+
+              let parsed;
+
+              try {
+                parsed = JSON.parse(data);
+              } catch {
+                parsed = null;
+              }
+
+              if (!response.ok) {
+                throw new Error("Unable to load note");
+              }
+
+              if (parsed && parsed.error) {
+                if (parsed.error.toLowerCase().includes("password")) {
+                  clearSavedPassword();
+                  openModal("unlock");
+                  return false;
+                }
+
+                throw new Error(parsed.error);
+              }
+
               isRemoteUpdate = true;
-
-              editor.setValue(message.content, -1);
-
+              editor.setValue(data, -1);
               isRemoteUpdate = false;
 
               updateCount();
               updateEditorMode();
               updatePreview();
-              setStatus("Updated live", "saved");
+
+              return true;
+            } catch (error) {
+              setStatus(
+                error instanceof Error ? error.message : "Unable to load note",
+                "offline",
+              );
+
+              return false;
             }
+          };
+
+          const connect = () => {
+            clearTimeout(reconnectTimer);
+
+            if (socket) {
+              try {
+                socket.close();
+              } catch {}
+            }
+
+            const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+
+            /*
+             * If this HTML is served by Elysia itself, this is correct:
+             *
+             *   http://localhost:4040/<note>
+             *   -> ws://localhost:4040/socket/ws2
+             *
+             * If your frontend is served by another port, change this to:
+             *
+             *   const wsUrl = "ws://localhost:4040/socket/ws";
+             */
+            const wsUrl = `${protocol}//${location.host}/socket/ws`;
+
+            console.log("[WS] Connecting to:", wsUrl);
+
+            socket = new WebSocket(wsUrl);
+
+            socket.addEventListener("open", () => {
+              console.log("[WS] Connected");
+
+              setStatus("Live", "saved");
+
+              socket.send(
+                JSON.stringify({
+                  type: "subscribe",
+                  noteId,
+                  ...(password ? { password } : {}),
+                }),
+              );
+            });
+
+            socket.addEventListener("message", (event) => {
+              let message;
+
+              try {
+                message = JSON.parse(event.data);
+              } catch {
+                console.warn("[WS] Invalid JSON:", event.data);
+                return;
+              }
+
+              console.log("[WS] Message:", message);
+
+              if (message.type === "error") {
+                const errorMessage =
+                  message.message || "The request could not be completed.";
+
+                if (
+                  message.code === "password_required" ||
+                  message.code === "invalid_password" ||
+                  message.code === "invalid_password_format"
+                ) {
+                  if (message.code === "invalid_password_format") {
+                    clearSavedPassword();
+                  }
+                  openModal("unlock");
+                  modalError.textContent = errorMessage;
+                  modalError.hidden = false;
+                } else if (!passwordModal.hidden) {
+                  modalError.textContent = errorMessage;
+                  modalError.hidden = false;
+                } else {
+                  setStatus(errorMessage, "offline");
+                }
+
+                return;
+              }
+
+              if (
+                message.type === "update" &&
+                message.noteId === noteId &&
+                message.content !== editor.getValue()
+              ) {
+                isRemoteUpdate = true;
+
+                editor.setValue(message.content, -1);
+
+                isRemoteUpdate = false;
+
+                updateCount();
+                updateEditorMode();
+                updatePreview();
+                setStatus("Updated live", "saved");
+              }
+
+              if (
+                (message.type === "update_password" ||
+                  message.type === "password_updated") &&
+                message.noteId === noteId
+              ) {
+                if (message.type === "password_updated") {
+                  if (pendingPassword === null) {
+                    clearSavedPassword();
+                  } else if (typeof pendingPassword === "string") {
+                    savePassword(pendingPassword);
+                  }
+                  pendingPassword = undefined;
+                } else {
+                  clearSavedPassword();
+                }
+                passwordModal.hidden = true;
+                setStatus(
+                  message.type === "password_updated"
+                    ? "Password changed"
+                    : "Password changed elsewhere",
+                  "saved",
+                );
+              }
+            });
+
+            socket.addEventListener("close", (event) => {
+              console.log("[WS] Closed:", event.code, event.reason);
+
+              setStatus("Reconnecting...", "offline");
+
+              reconnectTimer = setTimeout(connect, 1800);
+            });
+
+            socket.addEventListener("error", (error) => {
+              console.error("[WS] Error:", error);
+            });
+          };
+
+          const save = () => {
+            if (!socket || socket.readyState !== WebSocket.OPEN) {
+              setStatus("Waiting to save...", "offline");
+              return;
+            }
+
+            setStatus("Saving...", "saving");
+
+            socket.send(
+              JSON.stringify({
+                type: "update",
+                noteId,
+                content: editor.getValue(),
+                ...(password ? { password } : {}),
+              }),
+            );
+
+            window.setTimeout(() => {
+              if (socket && socket.readyState === WebSocket.OPEN) {
+                setStatus("Saved just now", "saved");
+              }
+            }, 350);
+          };
+
+          editor.onDidChangeModelContent(() => {
+            updateCount();
+            updatePreview();
+            if (languageSelect.value === "auto") {
+              updateEditorMode();
+            }
+
+            if (!isRemoteUpdate) {
+              setStatus("Unsaved changes", "saving");
+
+              clearTimeout(saveTimer);
+
+              saveTimer = setTimeout(save, 650);
+            }
+          });
+
+          languageSelect.addEventListener("change", updateEditorMode);
+
+          previewButton.addEventListener("click", () => {
+            setPreviewMode(!previewVisible);
+          });
+
+          themeToggle.addEventListener("click", () => {
+            applyTheme(!lightTheme);
+          });
+
+          editor.addCommand(
+            monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
+            () => {
+              clearTimeout(saveTimer);
+              save();
+            },
+          );
+
+          document
+            .getElementById("copyButton")
+            .addEventListener("click", async () => {
+              await navigator.clipboard.writeText(location.href);
+
+              const label = document.querySelector("#copyButton span");
+
+              const original = label.textContent;
+
+              label.textContent = "Copied";
+
+              setTimeout(() => {
+                label.textContent = original;
+              }, 1400);
+            });
+
+          document
+            .getElementById("copyContentButton")
+            .addEventListener("click", async () => {
+              await navigator.clipboard.writeText(editor.getValue());
+
+              const label = document.querySelector("#copyContentButton span");
+              const original = label.textContent;
+
+              label.textContent = "Copied";
+
+              setTimeout(() => {
+                label.textContent = original;
+              }, 1400);
+            });
+
+          document.getElementById("newButton").addEventListener("click", () => {
+            location.href = "/";
+          });
+
+          document
+            .getElementById("lockButton")
+            .addEventListener("click", () => {
+              openModal("protect");
+            });
+
+          logoutButton.addEventListener("click", () => {
+            clearSavedPassword();
+            passwordModal.hidden = true;
+            if (socket) {
+              socket.close();
+            }
+            location.reload();
+          });
+
+          removePasswordButton.addEventListener("click", () => {
+            openModal("remove");
+            modalTitle.textContent = "Remove note password";
+            modalDescription.textContent =
+              "Remove password protection from this note?";
+            passwordLabel.hidden = true;
+            passwordInput.hidden = true;
+            modalSubmit.textContent = "Remove password";
+          });
+
+          document
+            .getElementById("cancelModal")
+            .addEventListener("click", () => {
+              passwordModal.hidden = true;
+            });
+
+          passwordForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            modalError.hidden = true;
+
+            const value = passwordInput.value;
 
             if (
-              (message.type === "update_password" ||
-                message.type === "password_updated") &&
-              message.noteId === noteId
+              modalMode !== "remove" &&
+              !/^(?=.*[a-z])(?=.*[A-Z])[a-zA-Z0-9]{8,64}$/.test(value)
             ) {
-              if (message.type === "password_updated") {
-                if (pendingPassword === null) {
-                  clearSavedPassword();
-                } else if (typeof pendingPassword === "string") {
-                  savePassword(pendingPassword);
-                }
-                pendingPassword = undefined;
+              modalError.textContent =
+                "Password must be 8-64 characters with at least one uppercase and one lowercase letter.";
+              modalError.hidden = false;
+              return;
+            }
+
+            if (modalMode === "unlock") {
+              password = value;
+
+              if (await loadNote()) {
+                savePassword(value);
+                passwordModal.hidden = true;
+                connect();
               } else {
-                clearSavedPassword();
+                password = null;
+
+                modalError.textContent =
+                  "That password did not work. Try again.";
+
+                modalError.hidden = false;
               }
-              passwordModal.hidden = true;
-              setStatus(
-                message.type === "password_updated"
-                  ? "Password changed"
-                  : "Password changed elsewhere",
-                "saved",
-              );
+
+              return;
             }
-          });
 
-          socket.addEventListener("close", (event) => {
-            console.log("[WS] Closed:", event.code, event.reason);
-
-            setStatus("Reconnecting...", "offline");
-
-            reconnectTimer = setTimeout(connect, 1800);
-          });
-
-          socket.addEventListener("error", (error) => {
-            console.error("[WS] Error:", error);
-          });
-        };
-
-        const save = () => {
-          if (!socket || socket.readyState !== WebSocket.OPEN) {
-            setStatus("Waiting to save...", "offline");
-            return;
-          }
-
-          setStatus("Saving...", "saving");
-
-          socket.send(
-            JSON.stringify({
-              type: "update",
-              noteId,
-              content: editor.getValue(),
-              ...(password ? { password } : {}),
-            }),
-          );
-
-          window.setTimeout(() => {
-            if (socket && socket.readyState === WebSocket.OPEN) {
-              setStatus("Saved just now", "saved");
-            }
-          }, 350);
-        };
-
-        editor.onDidChangeModelContent(() => {
-          updateCount();
-          updatePreview();
-          if (languageSelect.value === "auto") {
-            updateEditorMode();
-          }
-
-          if (!isRemoteUpdate) {
-            setStatus("Unsaved changes", "saving");
-
-            clearTimeout(saveTimer);
-
-            saveTimer = setTimeout(save, 650);
-          }
-        });
-
-        languageSelect.addEventListener("change", updateEditorMode);
-
-        previewButton.addEventListener("click", () => {
-          setPreviewMode(!previewVisible);
-        });
-
-        themeToggle.addEventListener("click", () => {
-          applyTheme(!lightTheme);
-        });
-
-        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-          clearTimeout(saveTimer);
-          save();
-        });
-
-        document
-          .getElementById("copyButton")
-          .addEventListener("click", async () => {
-            await navigator.clipboard.writeText(location.href);
-
-            const label = document.querySelector("#copyButton span");
-
-            const original = label.textContent;
-
-            label.textContent = "Copied";
-
-            setTimeout(() => {
-              label.textContent = original;
-            }, 1400);
-          });
-
-        document
-          .getElementById("copyContentButton")
-          .addEventListener("click", async () => {
-            await navigator.clipboard.writeText(editor.getValue());
-
-            const label = document.querySelector("#copyContentButton span");
-            const original = label.textContent;
-
-            label.textContent = "Copied";
-
-            setTimeout(() => {
-              label.textContent = original;
-            }, 1400);
-          });
-
-        document.getElementById("newButton").addEventListener("click", () => {
-          location.href = "/";
-        });
-
-        document.getElementById("lockButton").addEventListener("click", () => {
-          openModal("protect");
-        });
-
-        logoutButton.addEventListener("click", () => {
-          clearSavedPassword();
-          passwordModal.hidden = true;
-          if (socket) {
-            socket.close();
-          }
-          location.reload();
-        });
-
-        removePasswordButton.addEventListener("click", () => {
-          openModal("remove");
-          modalTitle.textContent = "Remove note password";
-          modalDescription.textContent =
-            "Remove password protection from this note?";
-          passwordLabel.hidden = true;
-          passwordInput.hidden = true;
-          modalSubmit.textContent = "Remove password";
-        });
-
-        document.getElementById("cancelModal").addEventListener("click", () => {
-          passwordModal.hidden = true;
-        });
-
-        passwordForm.addEventListener("submit", async (event) => {
-          event.preventDefault();
-
-          modalError.hidden = true;
-
-          const value = passwordInput.value;
-
-          if (
-            modalMode !== "remove" &&
-            !/^(?=.*[a-z])(?=.*[A-Z])[a-zA-Z0-9]{8,64}$/.test(value)
-          ) {
-            modalError.textContent =
-              "Password must be 8-64 characters with at least one uppercase and one lowercase letter.";
-            modalError.hidden = false;
-            return;
-          }
-
-          if (modalMode === "unlock") {
-            password = value;
-
-            if (await loadNote()) {
-              savePassword(value);
-              passwordModal.hidden = true;
-              connect();
-            } else {
-              password = null;
-
-              modalError.textContent = "That password did not work. Try again.";
+            if (!socket || socket.readyState !== WebSocket.OPEN) {
+              modalError.textContent =
+                "Wait for the live connection, then try again.";
 
               modalError.hidden = false;
+
+              return;
             }
 
-            return;
-          }
+            socket.send(
+              JSON.stringify({
+                type: "update_password",
+                noteId,
+                newPassword: modalMode === "remove" ? null : value,
+                ...(password ? { password } : {}),
+              }),
+            );
 
-          if (!socket || socket.readyState !== WebSocket.OPEN) {
-            modalError.textContent =
-              "Wait for the live connection, then try again.";
+            pendingPassword = modalMode === "remove" ? null : value;
 
-            modalError.hidden = false;
+            setStatus("Saving password...", "saving");
+          });
 
-            return;
-          }
+          (async () => {
+            const loaded = await loadNote();
 
-          socket.send(
-            JSON.stringify({
-              type: "update_password",
-              noteId,
-              newPassword: modalMode === "remove" ? null : value,
-              ...(password ? { password } : {}),
-            }),
-          );
-
-          pendingPassword = modalMode === "remove" ? null : value;
-
-          setStatus("Saving password...", "saving");
-        });
-
-        (async () => {
-          const loaded = await loadNote();
-
-          if (loaded) {
-            logoutButton.hidden = !password;
-            connect();
-          }
-        })();
+            if (loaded) {
+              logoutButton.hidden = !password;
+              connect();
+            }
+          })();
         })();
       });
     </script>

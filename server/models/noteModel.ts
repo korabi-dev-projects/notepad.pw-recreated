@@ -5,7 +5,7 @@ import argon2 from "argon2";
 const noteSchema = new Schema(
   {
     id: { type: String, required: true, unique: true },
-    password: { type: String, required: false }, 
+    password: { type: String, required: false },
     content: {
       type: String,
       // 1. Remove required: true entirely
@@ -19,7 +19,7 @@ const noteSchema = new Schema(
   { timestamps: true },
 );
 
-noteSchema.index({ id: 1 }, { unique: true }); 
+noteSchema.index({ id: 1 }, { unique: true });
 
 noteSchema.pre("save", function () {
   // Fix math: 5MB in characters/bytes is exactly 5 * 1024 * 1024

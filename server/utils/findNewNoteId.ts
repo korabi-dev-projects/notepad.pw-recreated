@@ -48,7 +48,7 @@ export default async function findNewNoteId(): Promise<string> {
       .lean()
       .exec();
     if (!existingNote) {
-     const newNote = new noteModel({ id: newId, content: "" });
+      const newNote = new noteModel({ id: newId, content: "" });
       await newNote.save();
       return newId;
     }

@@ -14,7 +14,9 @@ export const connectDB = async () => {
       : defaultPoolSize;
 
     let warningMessage: string | undefined;
-    switch (true) { // cheap trick, lol
+    switch (
+      true // cheap trick, lol
+    ) {
       case Number.isNaN(maxPoolSize) || Number.isNaN(minPoolSize):
         warningMessage =
           "Invalid pool size values in environment variables, using default values of 10";
@@ -42,6 +44,4 @@ export const connectDB = async () => {
   }
 };
 
-
-
-export default {connectDB}; // room for other stuff later
+export default { connectDB }; // room for other stuff later

@@ -49,7 +49,14 @@ function sendWsError(
   message: string,
   noteId?: string,
 ) {
-  ws.send(JSON.stringify({ type: "error", code, message, ...(noteId ? { noteId } : {}) }));
+  ws.send(
+    JSON.stringify({
+      type: "error",
+      code,
+      message,
+      ...(noteId ? { noteId } : {}),
+    }),
+  );
 }
 
 app.onError(({ request, error }) => {
@@ -93,7 +100,10 @@ app.onBeforeHandle(async (context) => {
     return context.status(503);
   }
   if (!globalLimiter(ip)) {
-    devLog("Global request rate limit exceeded", { ip, method: context.request.method });
+    devLog("Global request rate limit exceeded", {
+      ip,
+      method: context.request.method,
+    });
     return context.status(429);
   }
 });
@@ -154,8 +164,10 @@ app.ws("/socket/ws", {
           ip,
           issues: result.error.issues,
         });
-        const hasPasswordIssue = result.error.issues.some((issue) =>
-          issue.path.includes("password") || issue.path.includes("newPassword"),
+        const hasPasswordIssue = result.error.issues.some(
+          (issue) =>
+            issue.path.includes("password") ||
+            issue.path.includes("newPassword"),
         );
         sendWsError(
           ws,
@@ -182,16 +194,32 @@ app.ws("/socket/ws", {
     try {
       if (msg.type === "subscribe") {
         if (!subscribeLimiter(`sub:${ip}`)) {
-          devLog("Subscription rate limit exceeded", { ip, noteId: msg.noteId });
-          sendWsError(ws, "rate_limited", "Too many requests. Try again shortly.", msg.noteId);
+          devLog("Subscription rate limit exceeded", {
+            ip,
+            noteId: msg.noteId,
+          });
+          sendWsError(
+            ws,
+            "rate_limited",
+            "Too many requests. Try again shortly.",
+            msg.noteId,
+          );
           return;
         }
         // fetch the note and make sure its not password protected before subscribing
         const note = await noteModel.findOne({ id: msg.noteId }).lean();
         if (note) {
           if (note.password && !msg.password) {
-            devLog("Subscription denied: password required", { ip, noteId: msg.noteId });
-            sendWsError(ws, "password_required", "A password is required for this note.", msg.noteId);
+            devLog("Subscription denied: password required", {
+              ip,
+              noteId: msg.noteId,
+            });
+            sendWsError(
+              ws,
+              "password_required",
+              "A password is required for this note.",
+              msg.noteId,
+            );
             return;
           }
           if (note.password && msg.password) {
@@ -207,7 +235,12 @@ app.ws("/socket/ws", {
                 noteId: msg.noteId,
                 reason: passwordCheck,
               });
-              sendWsError(ws, "invalid_password", "That password did not work.", msg.noteId);
+              sendWsError(
+                ws,
+                "invalid_password",
+                "That password did not work.",
+                msg.noteId,
+              );
               return;
             }
           }
@@ -219,8 +252,16 @@ app.ws("/socket/ws", {
 
       if (msg.type === "unsubscribe") {
         if (!subscribeLimiter(`sub:${ip}`)) {
-          devLog("Unsubscription rate limit exceeded", { ip, noteId: msg.noteId });
-          sendWsError(ws, "rate_limited", "Too many requests. Try again shortly.", msg.noteId);
+          devLog("Unsubscription rate limit exceeded", {
+            ip,
+            noteId: msg.noteId,
+          });
+          sendWsError(
+            ws,
+            "rate_limited",
+            "Too many requests. Try again shortly.",
+            msg.noteId,
+          );
           return;
         }
         ws.unsubscribe(`note:${msg.noteId}`);
@@ -231,12 +272,22 @@ app.ws("/socket/ws", {
       if (msg.type === "update") {
         if (isBannedSlug(msg.noteId)) {
           devLog("Update rejected: banned note ID", { ip, noteId: msg.noteId });
-          sendWsError(ws, "invalid_note", "This note ID cannot be updated.", msg.noteId);
+          sendWsError(
+            ws,
+            "invalid_note",
+            "This note ID cannot be updated.",
+            msg.noteId,
+          );
           return;
         }
         if (!updateLimiter(`upd:${ip}`)) {
           devLog("Update rate limit exceeded", { ip, noteId: msg.noteId });
-          sendWsError(ws, "rate_limited", "Too many updates. Try again shortly.", msg.noteId);
+          sendWsError(
+            ws,
+            "rate_limited",
+            "Too many updates. Try again shortly.",
+            msg.noteId,
+          );
           return;
         }
         // fetch the note and make sure its not password protected before updating
@@ -256,8 +307,16 @@ app.ws("/socket/ws", {
         }
         if (noteExisted) {
           if (note.password && !msg.password) {
-            devLog("Update denied: password required", { ip, noteId: msg.noteId });
-            sendWsError(ws, "password_required", "A password is required for this note.", msg.noteId);
+            devLog("Update denied: password required", {
+              ip,
+              noteId: msg.noteId,
+            });
+            sendWsError(
+              ws,
+              "password_required",
+              "A password is required for this note.",
+              msg.noteId,
+            );
             return;
           }
           if (note.password && msg.password) {
@@ -273,7 +332,12 @@ app.ws("/socket/ws", {
                 noteId: msg.noteId,
                 reason: passwordCheck,
               });
-              sendWsError(ws, "invalid_password", "That password did not work.", msg.noteId);
+              sendWsError(
+                ws,
+                "invalid_password",
+                "That password did not work.",
+                msg.noteId,
+              );
               return;
             }
           }
@@ -297,23 +361,47 @@ app.ws("/socket/ws", {
       }
       if (msg.type == "update_password") {
         if (isBannedSlug(msg.noteId)) {
-          devLog("Password update rejected: banned note ID", { ip, noteId: msg.noteId });
-          sendWsError(ws, "invalid_note", "This note ID cannot be updated.", msg.noteId);
+          devLog("Password update rejected: banned note ID", {
+            ip,
+            noteId: msg.noteId,
+          });
+          sendWsError(
+            ws,
+            "invalid_note",
+            "This note ID cannot be updated.",
+            msg.noteId,
+          );
           return;
         }
         if (!updatePasswordLimiter(`updpw:${ip}`)) {
-          sendWsError(ws, "rate_limited", "Too many password changes. Try again shortly.", msg.noteId);
+          sendWsError(
+            ws,
+            "rate_limited",
+            "Too many password changes. Try again shortly.",
+            msg.noteId,
+          );
           return;
         }
         // fetch the note and make sure its not password protected before updating
         let note = await noteModel.findOne({ id: msg.noteId }).exec();
         if (!note) {
-          devLog("Password update ignored: note not found", { ip, noteId: msg.noteId });
+          devLog("Password update ignored: note not found", {
+            ip,
+            noteId: msg.noteId,
+          });
           return;
         }
         if (note.password && !msg.password) {
-          devLog("Password update denied: password required", { ip, noteId: msg.noteId });
-          sendWsError(ws, "password_required", "The current password is required.", msg.noteId);
+          devLog("Password update denied: password required", {
+            ip,
+            noteId: msg.noteId,
+          });
+          sendWsError(
+            ws,
+            "password_required",
+            "The current password is required.",
+            msg.noteId,
+          );
           return;
         }
         if (note.password && msg.password) {
@@ -329,7 +417,12 @@ app.ws("/socket/ws", {
               noteId: msg.noteId,
               reason: passwordCheck,
             });
-            sendWsError(ws, "invalid_password", "That password did not work.", msg.noteId);
+            sendWsError(
+              ws,
+              "invalid_password",
+              "That password did not work.",
+              msg.noteId,
+            );
             return;
           }
         }
@@ -337,10 +430,13 @@ app.ws("/socket/ws", {
           ? await argon2.hash(msg.newPassword)
           : undefined;
         await note.save();
-        devLog(msg.newPassword ? "Note password updated" : "Note password removed", {
-          ip,
-          noteId: msg.noteId,
-        });
+        devLog(
+          msg.newPassword ? "Note password updated" : "Note password removed",
+          {
+            ip,
+            noteId: msg.noteId,
+          },
+        );
         ws.send(
           JSON.stringify({
             type: "password_updated",
@@ -358,7 +454,11 @@ app.ws("/socket/ws", {
       }
     } catch (err) {
       devLog("Error handling WebSocket message", { ip, error: err });
-      sendWsError(ws, "server_error", "The server could not complete that request.");
+      sendWsError(
+        ws,
+        "server_error",
+        "The server could not complete that request.",
+      );
     }
   },
   close(ws) {

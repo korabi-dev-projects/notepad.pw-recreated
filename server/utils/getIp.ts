@@ -36,6 +36,7 @@ export default function getIp(
       devLog(
         "TRUST_PROXY is true but no headers for client IP address were found",
       );
+      devLog("Headers received:", headers);
       return null;
     }
 

@@ -11,17 +11,17 @@ export default function getIp(
   let ip = "";
   if (process.env.TRUST_PROXY === "true") {
     const headers = req.headers as {
-      "cf-connecting-ip"?: string;
-      "x-forwarded-for"?: string;
-      "x-real-ip"?: string;
+      "CF-Connecting-IP"?: string;
+      "X-Forwarded-For"?: string;
+      "X-Real-IP"?: string;
     }; // why typescript
     // make sure there arent multiple different headers that could be used to spoof the address
 
     let count = 0;
     for (const header of [
-      "cf-connecting-ip",
-      "x-forwarded-for",
-      "x-real-ip",
+      "CF-Connecting-IP",
+      "X-Forwarded-For",
+      "X-Real-IP",
     ] as const) {
       if (headers[header]) count++;
     }
@@ -39,12 +39,12 @@ export default function getIp(
       return null;
     }
 
-    if (headers["cf-connecting-ip"]) {
-      ip = headers["cf-connecting-ip"] as string;
-    } else if (headers["x-forwarded-for"]) {
-      ip = headers["x-forwarded-for"].split(",")[0]!.trim(); // take the first IP in the list
-    } else if (headers["x-real-ip"]) {
-      ip = headers["x-real-ip"] as string;
+    if (headers["CF-Connecting-IP"]) {
+      ip = headers["CF-Connecting-IP"] as string;
+    } else if (headers["X-Forwarded-For"]) {
+      ip = headers["X-Forwarded-For"].split(",")[0]!.trim(); // take the first IP in the list
+    } else if (headers["X-Real-IP"]) {
+      ip = headers["X-Real-IP"] as string;
     }
     devLog("TRUST_PROXY is true, using IP address from headers:", ip);
   } else {
